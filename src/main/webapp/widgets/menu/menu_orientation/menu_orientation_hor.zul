@@ -1,0 +1,15 @@
+<zk xmlns:n="native">
+	<!-- Begin Menu -->
+	<menubar id="menubar" autodrop="true">
+		<menu label="Language">
+			<menupopup>
+				<menuitem label="Java"></menuitem>
+			</menupopup>
+		</menu>
+		<menu label="Framework">
+			<menupopup>
+				<menuitem label="Spring"></menuitem>
+			</menupopup>
+		</menu>
+	</menubar>
+</zk>

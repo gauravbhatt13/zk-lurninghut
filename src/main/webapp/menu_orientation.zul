@@ -1,0 +1,4 @@
+<zk xmlns:n="native">
+	<style src="/widgets/menu/menu_orientation/style.css" />
+	<include id="list" src="/widgets/menu/menu_orientation/menu_orientation_hor.zul"/>
+</zk>

@@ -1,0 +1,18 @@
+<window title="Create Blog" width="100%" apply="com.lurninghut.controller.BlogController">
+    <vbox id="mainBox">
+        <hbox align="center">
+            Blog Title :
+            <textbox id="title" constraint="no empty" width="400px"/>
+        </hbox>
+        <separator height="20px"></separator>
+        <hbox>
+            <separator width="80px"></separator>
+            <button id="addParagraph" label="Add Paragraph"/>
+            <button id="addGist" label="Add Gist"/>
+            <button id="addHeading" label="Add Heading"/>
+            <button id="addSubHeading" label="Add Sub Heading"/>
+            <button id="uploadImage" label="Upload Image" />
+            <button id="saveEntry" label="Save"/>
+        </hbox>
+    </vbox>
+</window>

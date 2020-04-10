@@ -1,0 +1,17 @@
+<zk xmlns:n="native">
+	<radiogroup>
+		<attribute name="onCheck"><![CDATA[
+			boolean isVertical = self.getSelectedItem().getValue().equals("1");
+			num = isVertical ? 3 : 4;
+			list.src = "";
+			list.src = 	isVertical ? 
+						"/widgets/menu/menu_orientation/menu_orientation_ver.zul" : 
+						"/widgets/menu/menu_orientation/menu_orientation_hor.zul";
+		]]></attribute>
+		<hlayout valign="middle">
+			<n:strong>Orientation:</n:strong>
+			<radio label="Horizontal" value="0" selected="true"></radio>
+			<radio label="Vertical" value="1"></radio>
+		</hlayout>
+	</radiogroup>
+</zk>

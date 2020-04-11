@@ -1,15 +1,30 @@
 package com.lurninghut.controller;
 
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.zkoss.image.Image;
 import org.zkoss.zhtml.Text;
 import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.Sessions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.UploadEvent;
@@ -22,17 +37,17 @@ import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Separator;
 import org.zkoss.zul.Textbox;
 
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import freemarker.cache.WebappTemplateLoader;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
 
 public class BlogController extends SelectorComposer<Component> {
+  /**
+   *
+   */
+  private static final long serialVersionUID = 1L;
   private Component mainBox;
   private RestHighLevelClient restHighLevelClient;
   private Integer paraCount;
@@ -42,17 +57,31 @@ public class BlogController extends SelectorComposer<Component> {
   private Integer imageCount;
   @Wire
   private Textbox title;
+  private Configuration cfg;
 
   @Override
   public void doAfterCompose(Component comp) throws Exception {
     super.doAfterCompose(comp);
     this.mainBox = comp.getChildren().get(0);
     this.restHighLevelClient = new RestHighLevelClient(RestClient.builder(new HttpHost("localhost", 9200, "http")));
+    initFreemarkerConfig();
     this.paraCount = 0;
     this.gistCount = 0;
     this.headerCount = 0;
     this.subHeaderCount = 0;
     this.imageCount = 0;
+  }
+
+  private void initFreemarkerConfig() {
+    cfg = new Configuration(Configuration.VERSION_2_3_30);
+    WebappTemplateLoader templateLoader = new WebappTemplateLoader(
+        Sessions.getCurrent().getWebApp().getServletContext(), "WEB-INF/templates");
+    cfg.setTemplateLoader(templateLoader);
+    cfg.setDefaultEncoding("UTF-8");
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setLogTemplateExceptions(false);
+        cfg.setWrapUncheckedExceptions(true);
+        cfg.setFallbackOnNullLoopVariable(false);
   }
 
   @Listen("onClick = #addParagraph")
@@ -109,8 +138,7 @@ public class BlogController extends SelectorComposer<Component> {
           org.zkoss.zul.Image image = new org.zkoss.zul.Image();
           image.setContent((org.zkoss.image.Image) media);
           image.setParent(hbox);
-        }
-        else {
+        } else {
           Messagebox.show("Not an image: " + media, "Error", Messagebox.OK, Messagebox.ERROR);
         }
       }
@@ -149,6 +177,25 @@ public class BlogController extends SelectorComposer<Component> {
 
   @Listen("onClick = #saveEntry")
   public void saveEntry() {
+    Map<String, String> dataMap = createDataMap();
+    createHTML(dataMap);
+    //indexEntry(dataMap);
+  }
+
+  private void createHTML(Map<String, String> dataMap) {
+    try {
+      Template template = cfg.getTemplate("index.ftl");
+      Writer consoleWriter = new OutputStreamWriter(System.out);
+      Map<String, Object> templateData = new HashMap<>();
+      templateData.put("row", dataMap);
+      template.process(templateData, consoleWriter);
+    } catch (IOException | TemplateException e) {
+      e.printStackTrace();
+    }
+    
+  }
+
+  private Map<String, String> createDataMap() {
     Map<String, String> dataMap = new LinkedHashMap<>();
     dataMap.put("title", this.title.getValue());
     for (Component component : mainBox.getChildren()) {
@@ -166,6 +213,10 @@ public class BlogController extends SelectorComposer<Component> {
         }
       }
     }
+    return dataMap;
+  }
+
+  private void indexEntry(Map<String, String> dataMap) {
     try {
       IndexRequest indexRequest = new IndexRequest("posts");
       indexRequest.source(dataMap, XContentType.JSON);
